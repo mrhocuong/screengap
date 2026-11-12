@@ -1,0 +1,25 @@
+{
+  "name": "ScreenGap — Bảo Vệ Mắt Bé Khi Xem YouTube",
+  "short_name": "ScreenGap",
+  "description": "Tự động theo dõi khoảng cách mặt với màn hình iPad và tạm dừng YouTube khi bé ngồi quá gần.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f5ee",
+  "theme_color": "#f8f5ee",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

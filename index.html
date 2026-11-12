@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>ScreenGap — Xem YouTube Giữ Khoảng Cách An Toàn Cho Mắt Bé</title>
+  <meta
+    name="description"
+    content="Ứng dụng Web/PWA cho iPad giúp theo dõi khoảng cách từ khuôn mặt bé tới màn hình bằng AI trên thiết bị, tự động tạm dừng YouTube khi ngồi quá gần và phát tiếp khi ngồi đúng tư thế."
+  />
+
+  <!-- iPadOS & PWA Standalone Configuration -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ScreenGap" />
+  <meta name="theme-color" content="#f8f5ee" />
+
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./icons/favicon.png" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+
+  <!-- Typography: Be Vietnam Pro & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="./index.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header & Live Distance Pill -->
+    <header class="topbar">
+      <div class="brand">
+        <img src="./icons/icon-192.png" alt="Biểu tượng ScreenGap" class="brand-icon" />
+        <div>
+          <h1 class="brand-title">ScreenGap</h1>
+          <p class="brand-subtitle">Bảo vệ mắt bé khi xem YouTube trên iPad</p>
+        </div>
+      </div>
+
+      <div class="telemetry-bar" id="telemetry-bar" data-state="idle" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="distance-readout" id="distance-readout">-- cm</span>
+        <div class="distance-meter" aria-hidden="true">
+          <div class="distance-meter-fill" id="distance-meter-fill"></div>
+        </div>
+        <span class="telemetry-label" id="telemetry-label">Chưa bật camera</span>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" class="btn" id="btn-cinema" aria-pressed="false" title="Mở rộng khung hình xem phim">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <path d="M8 4v16M16 4v16" />
+          </svg>
+          <span>Rạp phim</span>
+        </button>
+
+        <button type="button" class="btn" id="btn-guide" title="Hướng dẫn cài lên màn hình chính iPad">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2.5" />
+            <line x1="12" y1="18" x2="12.01" y2="18" />
+          </svg>
+          <span>Cài lên iPad</span>
+        </button>
+
+        <button type="button" class="btn btn-icon-only" id="btn-settings" aria-label="Cài đặt Phụ huynh" title="Cài đặt Phụ huynh (Có khóa phép tính)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Video Stage Column -->
+      <section class="stage-column" aria-label="Khung phát video YouTube">
+        <div class="player-stage">
+          <div id="yt-player" class="yt-mount"></div>
+
+          <!-- Floating Mini Camera Preview -->
+          <div class="cam-pip" id="cam-pip" hidden>
+            <video id="cam-video" playsinline muted></video>
+            <canvas id="cam-canvas"></canvas>
+            <span class="cam-pip-badge" id="cam-pip-badge">-- cm</span>
+          </div>
+
+          <!-- Prompt to Enable Camera Protection -->
+          <div class="camera-start-banner" id="camera-start-banner">
+            <div class="banner-copy">
+              <strong>Bật Camera bảo vệ khoảng cách mắt</strong>
+              <span id="banner-status-text">
+                AI xử lý 100% trực tiếp trên iPad, không gửi hình ảnh lên mạng. Tự động dừng video khi mặt bé gần dưới 35 cm.
+              </span>
+            </div>
+            <div class="banner-actions">
+              <button type="button" class="btn" id="btn-start-sim">Thử giả lập</button>
+              <button type="button" class="btn btn-primary" id="btn-start-camera">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 7l-7 5 7 5V7z" />
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                </svg>
+                Bật bảo vệ mắt
+              </button>
+            </div>
+          </div>
+
+          <!-- Full-Stage Too-Close Warning Shield -->
+          <div class="distance-shield" id="distance-shield" aria-hidden="true">
+            <div class="shield-card">
+              <div class="shield-illustration" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </div>
+              <h2 class="shield-title" id="shield-title">Ôi, mặt gần màn hình quá!</h2>
+              <p class="shield-message" id="shield-message">
+                Con ngồi lùi ra xa một chút để bảo vệ đôi mắt sáng khỏe nhé. Video sẽ tự động phát lại ngay!
+              </p>
+
+              <div class="shield-gauge">
+                <div class="shield-gauge-numbers">
+                  <span>Hiện tại: <strong class="shield-current-cm" id="shield-current-cm">24 cm</strong></span>
+                  <span class="shield-target-cm" id="shield-target-cm">Cần lùi ra: ≥ 38 cm</span>
+                </div>
+                <div class="shield-progress-track">
+                  <div class="shield-progress-fill" id="shield-progress-fill"></div>
+                </div>
+              </div>
+
+              <p class="shield-hint">Video đang tạm dừng • Sẽ tự phát tiếp khi con ngồi đủ xa</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Distance Slider (for testing without camera) -->
+        <div class="sim-strip" id="sim-strip" hidden>
+          <div>
+            <strong>Chế độ giả lập khoảng cách:</strong> Kéo thanh trượt dưới 35 cm để kiểm tra tính năng tự động Pause YouTube.
+          </div>
+          <div class="sim-slider-wrap">
+            <input type="range" id="sim-range" min="15" max="75" step="1" value="45" aria-label="Giả lập khoảng cách cm" />
+            <strong id="sim-value" style="font-family: var(--font-mono); min-width: 52px;">45 cm</strong>
+            <button type="button" class="btn" id="btn-exit-sim">Đóng</button>
+          </div>
+        </div>
+
+        <!-- Paste Any YouTube Link Bar -->
+        <form class="url-composer" id="url-form">
+          <input
+            type="text"
+            id="url-input"
+            class="url-input"
+            placeholder="Dán link YouTube, YouTube Shorts, Playlist hoặc mã Video vào đây..."
+            autocomplete="off"
+          />
+          <button type="button" class="btn" id="btn-paste-url" title="Dán nhanh từ bộ nhớ tạm">
+            Dán nhanh
+          </button>
+          <button type="submit" class="btn btn-coral">
+            Phát &amp; Lưu
+          </button>
+        </form>
+      </section>
+
+      <!-- Kid-Safe Video Shelf -->
+      <aside class="sidebar-panel" aria-label="Danh sách video cho bé">
+        <div class="panel-header">
+          <h2 class="panel-title">Kệ Video Của Bé</h2>
+          <span class="panel-count" id="video-count">5 video</span>
+        </div>
+        <div class="video-list" id="video-list"></div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Parent Math Gate Modal -->
+  <div class="modal-backdrop" id="gate-modal" hidden>
+    <div class="modal-dialog modal-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="gate-title">Xác nhận Phụ huynh</h2>
+        <button type="button" class="btn btn-icon-only" id="btn-close-gate" aria-label="Đóng">✕</button>
+      </div>
+      <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">
+        Giải phép tính nhỏ dưới đây để mở phần cài đặt khoảng cách:
+      </p>
+      <div class="math-prompt" id="math-prompt">6 × 7 = ?</div>
+      <form id="gate-form">
+        <div style="display: flex; gap: 10px;">
+          <input
+            type="number"
+            inputmode="numeric"
+            id="gate-input"
+            class="url-input"
+            placeholder="Nhập đáp án..."
+            required
+          />
+          <button type="submit" class="btn btn-primary">Mở khóa</button>
+        </div>
+        <p class="gate-error" id="gate-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Parent Settings Modal -->
+  <div class="modal-backdrop" id="settings-modal" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="settings-title">Cài đặt Phụ huynh &amp; Thống kê</h2>
+        <button type="button" class="btn btn-icon-only" id="btn-close-settings" aria-label="Đóng">✕</button>
+      </div>
+
+      <!-- Today's Stats -->
+      <div class="stats-row" style="margin-bottom: 16px;">
+        <div class="stat-box">
+          <span class="stat-value" id="stat-watch-time">0s</span>
+          <span class="stat-label">Thời gian xem hôm nay</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="stat-alerts">0 lần</span>
+          <span class="stat-label">Số lần nhắc ngồi gần</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="stat-avg-dist">-- cm</span>
+          <span class="stat-label">Khoảng cách trung bình</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Ngưỡng khoảng cách tối thiểu</strong>
+            <span>Dưới mức này video sẽ tự động Pause (Khuyên dùng: 35–40 cm)</span>
+          </div>
+          <div class="range-control">
+            <input type="range" id="input-threshold" min="25" max="55" step="1" value="35" />
+            <span class="range-badge" id="badge-threshold">35 cm</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Độ trễ trước khi Pause</strong>
+            <span>Tránh dừng nhầm khi bé chỉ cúi vào chạm chọn video</span>
+          </div>
+          <div class="range-control">
+            <input type="range" id="input-grace" min="0.5" max="3.0" step="0.1" value="1.2" />
+            <span class="range-badge" id="badge-grace">1.2s</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Chuẩn hóa theo iPad của bạn (40 cm)</strong>
+            <span id="calib-status">Hệ số hiện tại: ×1.00</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn" id="btn-calibrate-40">Đặt = 40 cm</button>
+            <button type="button" class="btn" id="btn-reset-calib">Mặc định</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Tạm dừng nếu che Camera / Không thấy mặt</strong>
+            <span>Chống bé lấy tay hoặc đồ vật che camera trước (sau 3.5 giây)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-no-face" />
+            <span class="switch-track"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Nhắc nhở bằng giọng nói Tiếng Việt</strong>
+            <span>Đọc lời nhắc nhẹ nhàng khi bé ngồi quá gần màn hình</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-voice" checked />
+            <span class="switch-track"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Âm báo hiệu (Chime)</strong>
+            <span>Phát tiếng chuông êm dịu khi tạm dừng và khi phát lại</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-sound" checked />
+            <span class="switch-track"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <strong>Hiện khung Camera nhỏ góc trên</strong>
+            <span>Tắt đi nếu muốn màn hình gọn hoàn toàn (AI vẫn chạy ngầm)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-pip" checked />
+            <span class="switch-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-section" style="flex-direction: row; flex-wrap: wrap; justify-content: space-between;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn" id="btn-toggle-cam-settings">Bật Camera</button>
+          <button type="button" class="btn" id="btn-open-sim-settings">Mở thanh Giả lập</button>
+        </div>
+        <button type="button" class="btn" id="btn-reset-videos">Khôi phục video mẫu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- iPad Setup & Guided Access Modal -->
+  <div class="modal-backdrop" id="guide-modal" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="guide-title">Cách cài lên iPad &amp; Khóa không cho bé thoát</h2>
+        <button type="button" class="btn btn-icon-only" id="btn-close-guide" aria-label="Đóng">✕</button>
+      </div>
+
+      <ol class="guide-steps">
+        <li class="guide-step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Mở bằng trình duyệt Safari trên iPad (qua HTTPS)</strong>
+            <p>
+              Truy cập đường dẫn trang web này bằng <strong>Safari</strong> trên iPad, nhấn <strong>Bật bảo vệ mắt</strong> và chọn <em>Cho phép (Allow)</em> quyền sử dụng Camera.
+            </p>
+          </div>
+        </li>
+        <li class="guide-step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Thêm vào Màn hình chính (Chạy toàn màn hình như App thật)</strong>
+            <p>
+              Nhấn nút <strong>Chia sẻ (Share ↑)</strong> trên thanh địa chỉ Safari → chọn <strong>Thêm vào Màn hình chính (Add to Home Screen)</strong> → nhấn <strong>Thêm</strong>. Từ giờ bé mở icon <strong>ScreenGap</strong> sẽ không còn thanh địa chỉ trình duyệt.
+            </p>
+          </div>
+        </li>
+        <li class="guide-step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Khóa cứng bé trong ScreenGap bằng Guided Access</strong>
+            <p>
+              Vào <em>Cài đặt iPad → Trợ năng (Accessibility) → Truy cập được hướng dẫn (Guided Access)</em> và bật lên + đặt mật khẩu 6 số. Khi đưa iPad cho bé xem trong ScreenGap, <strong>bấm 3 lần nút Nguồn</strong> để bé không thể vuốt thoát ra mở app YouTube gốc!
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <div style="margin-top: 18px; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-primary" id="btn-done-guide">Đã hiểu</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
